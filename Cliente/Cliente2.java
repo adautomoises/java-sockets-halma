@@ -7,23 +7,30 @@ import java.net.Socket;
 import java.util.Scanner;
 
 class Cliente2 {
-
-    private static final String CLIENTE = "(Cliente 2):";
-
     public static void main(String[] args) throws IOException {
+        Socket clienteSocket = new Socket("localhost", 1250);
+        DataOutputStream out = new DataOutputStream(clienteSocket.getOutputStream());
+        DataInputStream in = new DataInputStream(clienteSocket.getInputStream());
 
-        try (Socket clienteSocket = new Socket("localhost", 1250)) {
-            Scanner scanner = new Scanner(System.in);
-            DataOutputStream out = new DataOutputStream(clienteSocket.getOutputStream());
-            DataInputStream in = new DataInputStream(clienteSocket.getInputStream());
-
-            while (true) {
-                System.out.println("Digite uma mensagem para o servidor:");
-                out.writeUTF(CLIENTE + scanner.nextLine());
-
-                String msg = in.readUTF();
-                System.out.println("Stream Recebida: " + msg + "\n");
+        Thread threadOuvinte = new Thread(() -> {
+            try {
+                String mensagemDoServidor;
+                while ((mensagemDoServidor = in.readUTF()) != null) {
+                    System.out.println("\n" + mensagemDoServidor);
+                }
+            } catch (IOException e) {
+                System.out.println("Conexão com o servidor perdida.");
             }
+        });
+        threadOuvinte.start();
+
+        Scanner scanner = new Scanner(System.in);
+        while (scanner.hasNextLine()) {
+            String linha = scanner.nextLine();
+            out.writeUTF(linha);
         }
+
+        scanner.close();
+        clienteSocket.close();
     }
 }
